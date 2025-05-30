@@ -9,11 +9,15 @@ interface MarketItem {
   price: number;
   change: number;
   changePercent: number;
+  lastUpdate?: string;
+  timestamp?: number;
 }
 
 interface CurrencyItem {
   symbol: string;
   rate: number;
+  change?: number;
+  changePercent?: number;
   lastUpdate: string;
 }
 
@@ -87,46 +91,125 @@ export default function MarketData() {
         ) : (
           <div className="space-y-4">
             {type === "market" ? (
-              Object.entries(data || {}).map(([key, item]: [string, any]) => (
-                <div key={key} className="flex justify-between items-center">
-                  <span className="font-medium">{item.symbol}</span>
-                  <div className="text-right">
-                    {item.price !== undefined && item.price !== null ? (
-                      <>
-                        <div className="font-bold">{formatPrice(item.price)}</div>
-                        {item.change !== undefined && item.changePercent !== undefined ? (
-                          <div className="text-sm">{formatChange(item.change, item.changePercent)}</div>
-                        ) : (
-                          <div className="text-sm text-gray-500">Data unavailable</div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-sm text-gray-500">Loading...</div>
+              <>
+                {/* Display market data in specific order for Indian markets */}
+                {title === "Indian Markets" ? (
+                  <>
+                    {/* NIFTY 50 */}
+                    {data?.nifty && (
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{data.nifty.symbol}</span>
+                        <div className="text-right">
+                          <div className="font-bold">{formatPrice(data.nifty.price)}</div>
+                          <div className="text-sm">{formatChange(data.nifty.change, data.nifty.changePercent)}</div>
+                          {data.nifty.lastUpdate && (
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {data.nifty.lastUpdate}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     )}
+                    
+                    {/* SENSEX */}
+                    {data?.sensex && (
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{data.sensex.symbol}</span>
+                        <div className="text-right">
+                          <div className="font-bold">{formatPrice(data.sensex.price)}</div>
+                          <div className="text-sm">{formatChange(data.sensex.change, data.sensex.changePercent)}</div>
+                          {data.sensex.lastUpdate && (
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {data.sensex.lastUpdate}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* NIFTY Bank */}
+                    {data?.niftyBank && (
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{data.niftyBank.symbol}</span>
+                        <div className="text-right">
+                          <div className="font-bold">{formatPrice(data.niftyBank.price)}</div>
+                          <div className="text-sm">{formatChange(data.niftyBank.change, data.niftyBank.changePercent)}</div>
+                          {data.niftyBank.lastUpdate && (
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {data.niftyBank.lastUpdate}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* For other markets (US), use the original logic */
+                  Object.entries(data || {})
+                    .filter(([key]) => !['refreshedAt', 'debug'].includes(key))
+                    .map(([key, item]: [string, any]) => (
+                      <div key={key} className="flex justify-between items-center">
+                        <span className="font-medium">{item.symbol}</span>
+                        <div className="text-right">
+                          {item.price !== undefined && item.price !== null ? (
+                            <>
+                              <div className="font-bold">{formatPrice(item.price)}</div>
+                              {item.change !== undefined && item.changePercent !== undefined ? (
+                                <div className="text-sm">{formatChange(item.change, item.changePercent)}</div>
+                              ) : (
+                                <div className="text-sm text-gray-500">Data unavailable</div>
+                              )}
+                              {item.lastUpdate && (
+                                <div className="text-xs text-gray-500 flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {item.lastUpdate}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-sm text-gray-500">Loading...</div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                )}
+                {data?.refreshedAt && (
+                  <div className="text-xs text-gray-500 flex items-center gap-1 mt-2 pt-2 border-t">
+                    <Clock className="h-3 w-3" />
+                    Last updated: {data.refreshedAt}
                   </div>
-                </div>
-              ))
+                )}
+              </>
             ) : (
-              Object.entries(data || {}).map(([key, item]: [string, any]) => (
-                <div key={key} className="flex justify-between items-center">
-                  <span className="font-medium">{item.symbol}</span>
-                  <div className="text-right">
-                    {item.rate !== undefined && item.rate !== null ? (
-                      <>
-                        <div className="font-bold">₹{item.rate.toFixed(2)}</div>
-                        {item.lastUpdate && (
-                          <div className="text-xs text-gray-500 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(item.lastUpdate).toLocaleTimeString()}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-sm text-gray-500">Loading...</div>
-                    )}
+              /* Currency data */
+              Object.entries(data || {})
+                .filter(([key]) => !['refreshedAt', 'debug'].includes(key))
+                .map(([key, item]: [string, any]) => (
+                  <div key={key} className="flex justify-between items-center">
+                    <span className="font-medium">{item.symbol}</span>
+                    <div className="text-right">
+                      {item.rate !== undefined && item.rate !== null ? (
+                        <>
+                          <div className="font-bold">₹{item.rate.toFixed(2)}</div>
+                          {item.change !== undefined && item.changePercent !== undefined && (
+                            <div className="text-sm">{formatChange(item.change, item.changePercent)}</div>
+                          )}
+                          {item.lastUpdate && (
+                            <div className="text-xs text-gray-500 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {item.lastUpdate}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-sm text-gray-500">Loading...</div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))
             )}
           </div>
         )}
@@ -186,8 +269,11 @@ export default function MarketData() {
                   <p className="text-sm text-gray-600 mb-2">
                     NIFTY 50 represents the top 50 companies by market capitalization on the NSE.
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 mb-2">
                     SENSEX tracks 30 well-established companies listed on the BSE.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    NIFTY Bank focuses on the banking sector with 12 most liquid banking stocks.
                   </p>
                 </div>
                 <div>
